@@ -1,0 +1,17 @@
+# Render Blueprint: one web service (serves the app and the accounts API).
+# Create a free Postgres database in the dashboard, then paste its Internal Database URL into DATABASE_URL.
+services:
+  - type: web
+    name: noor-nest
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: TRUST_PROXY
+        value: "1"
+      - key: DATABASE_URL
+        sync: false
