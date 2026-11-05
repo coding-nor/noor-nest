@@ -32,7 +32,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 h2{margin:14px 0 10px;font-size:1.35rem}
 .sub{color:var(--muted);margin:4px 0}
 .nav{position:fixed;left:0;right:0;bottom:0;z-index:10;background:rgba(23,22,63,.94);backdrop-filter:blur(8px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
-.nav-in{max-width:480px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr)}
+.nav-in{max-width:480px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr)}
 .nav button{background:none;border:0;padding:9px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:0;color:var(--muted);font-size:.8rem;min-height:60px;position:relative}
 .nav button .ic{font-size:1.5rem;line-height:1.2}
 .nav button.on{color:var(--saffron)}
@@ -255,3 +255,35 @@ footer.credit{margin-top:26px;color:var(--muted);font-size:.82rem;display:flex;j
 .confetti i{position:absolute;top:-16px;width:9px;height:14px;border-radius:2px;animation:cfall 2s ease-in forwards}
 @keyframes cfall{to{transform:translate(var(--dx),108vh) rotate(var(--r));opacity:.9}}
 .noscript{padding:24px}
+/* prayer corner */
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+.pcard{background:var(--card);border:2px solid var(--line);border-radius:20px;padding:14px 10px;color:var(--ink);display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;min-height:150px}
+.pcard:active{transform:scale(.97)}
+.pcard .pic{font-size:2.3rem;line-height:1.2}
+.pcard b{font-size:1.02rem}
+.pcard small{color:var(--muted);font-size:.8rem;line-height:1.25}
+.pst{margin-top:auto;font-size:.95rem;letter-spacing:2px}
+.pst i{font-style:normal;filter:grayscale(1) opacity(.3)}
+.bigic{font-size:5.2rem;text-align:center;line-height:1.2;margin:14px 0 4px}
+.bigic.sm{font-size:2.4rem;margin:0}
+.posebox{width:min(300px,78%);margin:12px auto 4px;background:var(--card);border:3px solid var(--line);border-radius:24px;padding:8px}
+.posebox.sm{width:100%;margin:0 0 4px;padding:2px;border-width:2px;border-radius:14px}
+.posebox svg{display:block;width:100%;height:auto}
+.dtitle{text-align:center;margin:8px 0 2px;font-size:1.35rem}
+.ddesc{text-align:center;font-size:1.1rem;line-height:1.5;margin:4px 6px 8px}
+.phrasebox{background:var(--night);border:1px solid var(--line);border-radius:18px;padding:8px 12px;margin:8px 0;text-align:center}
+.phrasebox small{color:var(--muted)}
+.phrase{font-family:'Amiri Quran',serif;font-size:1.7rem;line-height:2;color:var(--saffron)}
+.chosen{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;min-height:38px;margin:6px 0 10px}
+.ochip{background:rgba(123,224,173,.18);border:2px solid var(--mint);border-radius:99px;padding:2px 10px;font-weight:700}
+.ogrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ocard{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:8px;color:var(--ink);display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center;min-height:104px;justify-content:center}
+.ocard b{font-size:.95rem;line-height:1.2}
+.ocard small{color:var(--muted);font-size:.75rem;line-height:1.2}
+.ocard.shake{animation:shake .4s}
+.ocard.hint{border-color:var(--saffron);box-shadow:0 0 0 4px rgba(255,200,87,.35)}
+.rkopts{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:16px 0}
+.ropt{background:var(--card);border:3px solid var(--line);border-radius:22px;padding:14px 4px;color:var(--ink);display:flex;flex-direction:column;align-items:center;min-height:110px;justify-content:center}
+.ropt b{font-size:2.6rem;line-height:1}
+.ropt small{color:var(--muted)}
+.ropt.shake{animation:shake .4s}

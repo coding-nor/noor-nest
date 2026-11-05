@@ -2,7 +2,7 @@
 'use strict';
 
 /* ---------- edit this line: your name(s) for the credits ---------- */
-const AUTHORS = 'kadem nor el houda';
+const AUTHORS = 'Your Name';
 
 const API = 'https://ummahapi.com/api/quran/surah/';
 /* Optional: an EveryAyah folder name for a different reciter (for example a kids-repeat recitation).
@@ -194,11 +194,11 @@ const DAY = 86400000;
 
 const GUEST_KEY = 'noornest.v1', ACCT_KEY = 'noornest.acct';
 let KEY = GUEST_KEY;
-const fresh = () => ({ lang: '', sound: true, mic: false, more: false, tour: false, kid: 'boy', mode: '', stars: 0, cards: {}, done: {}, weak: {}, seed: {}, log: {}, streak: { last: '', count: 0 } });
+const fresh = () => ({ lang: '', sound: true, mic: false, more: false, tour: false, kid: 'boy', mode: '', stars: 0, cards: {}, done: {}, weak: {}, seed: {}, log: {}, deen: {}, streak: { last: '', count: 0 } });
 const ls = (k, v) => { try { if (v === undefined) return localStorage.getItem(k) || ''; if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} return ''; };
 function normalize(st) {
   st.streak = Object.assign({ last: '', count: 0 }, st.streak);
-  ['cards', 'done', 'weak', 'seed', 'log'].forEach(k => { if (!st[k] || typeof st[k] !== 'object') st[k] = {}; });
+  ['cards', 'done', 'weak', 'seed', 'log', 'deen'].forEach(k => { if (!st[k] || typeof st[k] !== 'object') st[k] = {}; });
   if (!I18N[st.lang]) { const nl = (navigator.language || 'en').slice(0, 2); st.lang = I18N[nl] ? nl : 'en'; }
   return st;
 }
@@ -233,6 +233,8 @@ function mergeState(local, remote) {
   const a = local.streak || {}, b = remote.streak || {};
   o.streak = (a.last || '') > (b.last || '') ? { last: a.last, count: a.count } : (a.last === b.last ? { last: a.last || '', count: maxN(a.count, b.count) } : { last: b.last || '', count: b.count || 0 });
   o.seed = {};
+  o.deen = {};
+  [remote.deen || {}, local.deen || {}].forEach(src => Object.keys(src).forEach(k => { const e = o.deen[k] = o.deen[k] || {}; e.l = maxN(e.l, (src[k] || {}).l); e.b = maxN(e.b, (src[k] || {}).b); }));
   return normalize(o);
 }
 function persistLocal() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
@@ -686,7 +688,8 @@ function render() {
   document.documentElement.dir = t('dir');
   if (Auth.gate) { ov().hidden = true; $('#app').innerHTML = authHTML(); return; }
   const due = dueKeys().length;
-  const navs = [['home', '🏠', t('nHome')], ['learn', '📖', t('nLearn')], ['review', '🔔', t('nReview')], ['parents', '👪', t('nParents')]];
+  const PT = DT();
+  const navs = [['home', '🏠', t('nHome')], ['learn', '📖', t('nLearn')], ['pray', '🕌', PT ? PT.ui.nPray : 'Pray'], ['review', '🔔', t('nReview')], ['parents', '👪', t('nParents')]];
   $('#app').innerHTML =
     '<header class="top"><div class="brand">🌙 ' + esc(t('appName')) + '</div><div class="starcount" aria-label="stars">⭐ ' + S.stars + '</div></header>' +
     '<main id="main"></main>' +
@@ -696,7 +699,7 @@ function render() {
 }
 function renderMain() {
   const m = $('#main'); if (!m) return;
-  m.innerHTML = view === 'home' ? homeHTML() : view === 'learn' ? learnHTML() : view === 'review' ? reviewHomeHTML() : parentsHTML();
+  m.innerHTML = view === 'home' ? homeHTML() : view === 'learn' ? learnHTML() : view === 'pray' ? prayHTML() : view === 'review' ? reviewHomeHTML() : parentsHTML();
 }
 
 
@@ -776,11 +779,85 @@ function parentsHTML() {
     '<div class="set"><button class="btn ghost big" data-act="reset">' + esc(t('pReset')) + '</button></div>';
 }
 
+/* ---------- prayer corner: wudu, salah, rakats, prayer times ---------- */
+let dn = null, og = null, rk = null;
+const DT = () => (window.DEEN_TXT && (window.DEEN_TXT[S.lang] || window.DEEN_TXT.en)) || null;
+const dt = (k, v) => { const T = DT(); let x = (T && T.ui[k]) || ''; if (v) Object.keys(v).forEach(n => { x = x.replace('{' + n + '}', v[n]); }); return x; };
+const deenOf = k => Object.assign({ l: 0, b: 0 }, S.deen && S.deen[k]);
+function deenSet(k, patch) { S.deen = S.deen || {}; S.deen[k] = Object.assign(deenOf(k), patch); }
+/* faceless side-view figures facing right: standing, hands up, bowing, prostrating, sitting */
+function poseSVG(p) {
+  const F = {
+    qiyam: { legs: [[60, 97], [60, 64]], torso: [[60, 64], [60, 34]], head: [60, 19], arms: [[60, 38], [69, 50], [58, 52]] },
+    takbir: { legs: [[60, 97], [60, 64]], torso: [[60, 64], [60, 34]], head: [60, 19], arms: [[60, 38], [74, 34], [75, 20]] },
+    ruku: { legs: [[48, 97], [48, 62]], torso: [[48, 62], [92, 56]], head: [104, 54], arms: [[88, 59], [52, 80]] },
+    sujud: { legs: [[22, 97], [56, 97], [46, 66]], torso: [[46, 66], [88, 76]], head: [100, 87], arms: [[86, 78], [102, 97]] },
+    sit: { legs: [[24, 97], [66, 97], [36, 82]], torso: [[36, 82], [41, 40]], head: [43, 27], arms: [[41, 46], [62, 84]] }
+  }[p] || null; if (!F) return '';
+  const L = (pts, w, c) => '<polyline points="' + pts.map(a => a.join(',')).join(' ') + '" fill="none" stroke="' + c + '" stroke-width="' + w + '" stroke-linecap="round" stroke-linejoin="round"/>';
+  return '<svg viewBox="0 0 140 112" aria-hidden="true"><rect x="4" y="97" width="132" height="12" rx="6" fill="#2e8f6e"/><rect x="4" y="97" width="132" height="12" rx="6" fill="none" stroke="#ffc857" stroke-width="2"/>' +
+    L(F.legs, 11, '#c9c4f2') + L(F.torso, 15, '#fff6e0') + L(F.arms, 8, '#fff6e0') + '<circle cx="' + F.head[0] + '" cy="' + F.head[1] + '" r="10" fill="#f2c9a0"/></svg>';
+}
+function prayHTML() {
+  const T = DT(); if (!T) return '';
+  const st = n => '<span class="pst">' + '⭐'.repeat(n) + '<i>' + '⭐'.repeat(3 - n) + '</i></span>';
+  const card = (w, ic, title, desc, extra) => '<button class="pcard" data-act="dopen" data-w="' + w + '"><span class="pic">' + ic + '</span><b>' + esc(title) + '</b><small>' + esc(desc) + '</small>' + extra + '</button>';
+  const tick = k => deenOf(k).l ? '<span class="pst">✅</span>' : '<span class="pst"><i>✅</i></span>';
+  return '<h2>🕌 ' + esc(dt('title')) + '</h2><p class="sub">' + esc(dt('sub')) + '</p><div class="pgrid">' +
+    card('learnwudu', '💧', dt('learnWudu'), dt('descWudu'), tick('wudu')) + card('gamewudu', '🎮', dt('gameWudu'), dt('descWudu'), st(deenOf('wudu').b)) +
+    card('learnsalah', '🧎', dt('learnSalah'), dt('descSalah'), tick('salah')) + card('gamesalah', '🎮', dt('gameSalah'), dt('descSalah'), st(deenOf('salah').b)) +
+    card('rakat', '🔢', dt('gameRakat'), dt('descRakat'), st(deenOf('rakat').b)) + card('times', '🌅', dt('gameTimes'), dt('descTimes'), st(deenOf('times').b)) +
+    '</div><p class="hintline">' + esc(dt('note')) + '</p>';
+}
+const dnVisual = (kind, it, small) => kind === 'salah' ? '<div class="posebox' + (small ? ' sm' : '') + '" role="img" aria-label="' + esc(dt('pose')) + '">' + poseSVG(it.pose) + '</div>' : '<div class="bigic' + (small ? ' sm' : '') + '">' + it.ic + '</div>';
+const deenHead = (n, i, right) => headHTML(Array.from({ length: n }, (_, j) => '<i class="dot ' + (j < i ? 'done' : j === i ? 'on' : '') + '"></i>').join(''), right || '');
+function dnLearn() {
+  const arr = DT()[dn.kind], i = dn.i, n = arr.length;
+  if (dn.done) {
+    showOv(headHTML('', '') + '<div class="bigic">🌟</div><p class="stepcap" style="font-size:1.4rem">' + esc(dt('learnedAll')) + '</p><div class="cta"><button class="btn big alt" data-act="dgo" data-w="game' + dn.kind + '">🎮 ' + esc(dt('playGame')) + '</button><button class="btn big ghost" data-act="lclose">' + esc(dt('done')) + '</button></div>');
+    return;
+  }
+  const it = arr[i], last = i === n - 1;
+  const phrase = it.ar ? '<div class="phrasebox"><small>' + esc(dt('saySo')) + '</small><div class="phrase" dir="rtl" lang="ar">' + esc(it.ar) + '</div></div>' : '';
+  const end = last && dn.kind === 'wudu' ? '<div class="phrasebox"><small>' + esc(dt('wuduEnd')) + '</small><div class="phrase" dir="rtl" lang="ar">أَشْهَدُ أَنْ لَا إِلَٰهَ إِلَّا ٱللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ وَأَشْهَدُ أَنَّ مُحَمَّدًا عَبْدُهُ وَرَسُولُهُ</div><p class="sub" style="text-align:center">' + esc(dt('wuduEndEn')) + '</p></div>' : '';
+  showOv(deenHead(n, i, dt('stepOf', { i: i + 1, n })) + dnVisual(dn.kind, it) + '<h3 class="dtitle">' + (i + 1) + '. ' + esc(it.t) + '</h3><p class="ddesc">' + esc(it.d) + '</p>' + phrase + end +
+    '<div class="row">' + (i > 0 ? '<button class="btn ghost" data-act="dnprev">‹ ' + esc(dt('prev')) + '</button>' : '') + '<button class="btn big" data-act="dnnext">' + esc(last ? dt('done') : dt('next')) + ' ›</button></div>');
+}
+function ogRender() {
+  const T = DT(), arr = T[og.kind], n = arr.length;
+  const chosen = arr.slice(0, og.next).map((it, i) => '<span class="ochip">' + (i + 1) + ' ' + (it.ic || '🧎') + '</span>').join('');
+  const cards = og.order.filter(i => i >= og.next).map(i => {
+    const it = arr[i], cls = 'ocard' + (og.shake === i ? ' shake' : '') + (og.hint === i ? ' hint' : '');
+    return '<button class="' + cls + '" data-act="ogpick" data-i="' + i + '">' + dnVisual(og.kind, it, true) + '<b>' + esc(it.n || it.t) + '</b>' + (og.kind === 'times' ? '<small>' + esc(it.d) + '</small>' : '') + '</button>';
+  }).join('');
+  showOv(deenHead(n, og.next) + '<p class="stepcap">' + esc(dt(og.kind === 'times' ? 'orderTimes' : 'order')) + '</p><div class="chosen" aria-live="polite">' + (chosen || '&nbsp;') + '</div><div class="ogrid">' + cards + '</div>');
+  og.shake = -1;
+}
+function deenResult(key, miss, againAct) {
+  const stars = miss === 0 ? 3 : miss <= 2 ? 2 : 1, prev = deenOf(key).b, gain = Math.max(0, stars - prev);
+  if (gain) { S.stars += gain; addLog('stars', gain); }
+  deenSet(key, { b: Math.max(prev, stars) }); bumpStreak(); save(); fanfare(); if (stars >= 2) confetti();
+  showOv(headHTML('', '') + '<div class="res"><div class="big-stars" role="img" aria-label="' + esc(starsTxt(stars)) + '">' + '⭐'.repeat(stars) + '</div><p class="stepcap" style="font-size:1.4rem">' + esc(dt('wellDone')) + '</p><p class="stepcap">' + esc(gain ? dt('gained', { n: gain }) : dt('noNew')) + '</p></div>' +
+    '<div class="cta"><button class="btn big alt" data-act="' + againAct + '">↻ ' + esc(dt('again')) + '</button><button class="btn big ghost" data-act="lclose">' + esc(dt('done')) + '</button></div>');
+}
+function rkRender() {
+  const T = DT(), arr = T.times, it = arr[rk.order[rk.i]], n = arr.length;
+  showOv(deenHead(n, rk.i, dt('round', { i: rk.i + 1, n })) + '<div class="bigic">' + it.ic + '</div><h3 class="dtitle">' + esc(dt('rakatQ', { p: it.n })) + '</h3>' +
+    '<div class="rkopts">' + [2, 3, 4].map(k => '<button class="ropt' + (rk.shake === k ? ' shake' : '') + '" data-act="rkpick" data-n="' + k + '"><b>' + k + '</b><small>' + esc(dt('rakats')) + '</small></button>').join('') + '</div>');
+  rk.shake = 0;
+}
+function deenOpen(w) {
+  stopAudio();
+  if (w === 'learnwudu' || w === 'learnsalah') { dn = { kind: w === 'learnwudu' ? 'wudu' : 'salah', i: 0, done: false }; og = rk = null; dnLearn(); }
+  else if (w === 'gamewudu' || w === 'gamesalah' || w === 'times') { const kind = w === 'times' ? 'times' : w === 'gamewudu' ? 'wudu' : 'salah'; const n = DT()[kind].length; let ord; do { ord = shuffle(Array.from({ length: n }, (_, i) => i)); } while (ord.every((v, i) => v === i)); og = { kind, order: ord, next: 0, miss: 0, streak: 0, shake: -1, hint: -1 }; dn = rk = null; ogRender(); }
+  else if (w === 'rakat') { rk = { order: shuffle([0, 1, 2, 3, 4]), i: 0, miss: 0, shake: 0 }; dn = og = null; rkRender(); }
+}
+
 /* ---------- overlay plumbing ---------- */
 const ov = () => $('#ov');
 let lesson = null, review = null, rec = null, drill = null, pr = null;
 function showOv(html) { const o = ov(); o.hidden = false; o.innerHTML = '<div class="ovin">' + html + '</div>'; o.scrollTop = 0; }
-function closeOv() { stopAudio(); if (rec) { rec.destroy(); rec = null; } lesson = null; review = null; drill = null; pr = null; const o = ov(); o.hidden = true; o.innerHTML = ''; render(); }
+function closeOv() { stopAudio(); if (rec) { rec.destroy(); rec = null; } dn = og = rk = null; lesson = null; review = null; drill = null; pr = null; const o = ov(); o.hidden = true; o.innerHTML = ''; render(); }
 const loadingHTML = () => '<p class="stepcap" style="margin-top:40vh">' + esc(t('loading')) + '</p>';
 function errHTML(retryAct) { return '<div class="lhead"><button class="x" data-act="lclose" aria-label="' + esc(t('close')) + '">✕</button></div><p class="stepcap" style="margin-top:30vh">' + esc(t('loadErr')) + '</p><div class="row"><button class="btn" data-act="' + retryAct + '">' + esc(t('retry')) + '</button></div>'; }
 const headHTML = (dots, right) => '<div class="lhead"><button class="x" data-act="lclose" aria-label="' + esc(t('close')) + '">✕</button><div class="dots">' + dots + '</div><div class="lsurah">' + esc(right) + '</div></div>';
@@ -1236,6 +1313,11 @@ document.addEventListener('click', e => {
       if (gate && val === gate.a + gate.b) { gateOK = true; gate = null; } else if (gate) { gate.bad = true; gate.a = Math.floor(rnd(11, 30)); gate.b = Math.floor(rnd(11, 30)); }
       renderMain(); break;
     }
+    case 'dopen': case 'dgo': deenOpen(el.dataset.w); break;
+    case 'dnprev': if (dn && dn.i > 0) { dn.i--; dnLearn(); } break;
+    case 'dnnext': if (dn) { if (dn.i < DT()[dn.kind].length - 1) { dn.i++; chime(dn.i); } else { dn.done = true; deenSet(dn.kind, { l: 1 }); save(); fanfare(); } dnLearn(); } break;
+    case 'ogpick': if (og) { const i = +el.dataset.i; if (i === og.next) { chime(og.next); og.next++; og.streak = 0; og.hint = -1; if (og.next >= DT()[og.kind].length) { deenResult(og.kind, og.miss, 'dopen" data-w="' + (og.kind === 'times' ? 'times' : 'game' + og.kind)); break; } } else { og.miss++; og.streak++; og.shake = i; if (og.streak >= 2) og.hint = og.next; tone(150, .2, 'sawtooth', .06); } ogRender(); } break;
+    case 'rkpick': if (rk) { const n = +el.dataset.n, ok2 = n === DT().times[rk.order[rk.i]].r; if (ok2) { chime(rk.i + 1); rk.i++; if (rk.i >= 5) { deenResult('rakat', rk.miss, 'dopen" data-w="rakat'); break; } } else { rk.miss++; rk.shake = n; tone(150, .2, 'sawtooth', .06); } rkRender(); } break;
     case 'au-view': readAuthFields(); Auth.view = el.dataset.v; Auth.msg = ''; Auth.privacy = false; render(); break;
     case 'au-privacy': { const n = $('#privnote'); if (n) n.hidden = !n.hidden; break; }
     case 'au-guest': enterGuest(); render(); break;
