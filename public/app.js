@@ -1,8 +1,8 @@
 (() => {
 'use strict';
 
-/* ---------- edit this line: your name(s) for the credits ---------- */
-const AUTHORS = 'Your Name';
+
+const AUTHORS = 'kadem nor el houda';
 
 const API = 'https://ummahapi.com/api/quran/surah/';
 /* Optional: an EveryAyah folder name for a different reciter (for example a kids-repeat recitation).
