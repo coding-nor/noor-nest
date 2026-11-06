@@ -137,7 +137,7 @@ function sanitizeState(x) {
   if (!x || typeof x !== 'object' || Array.isArray(x)) return null;
   const o = {};
   o.lang = ['en', 'fr', 'ar'].includes(x.lang) ? x.lang : 'en';
-  o.sound = x.sound !== false; o.mic = x.mic === true; o.more = x.more === true; o.tour = x.tour === true;
+  o.sound = x.sound !== false; o.mic = x.mic === true; o.narr = x.narr !== false; o.more = x.more === true; o.tour = x.tour === true;
   o.kid = x.kid === 'girl' ? 'girl' : 'boy';
   o.mode = ['little', 'big'].includes(x.mode) ? x.mode : '';
   o.stars = num(x.stars, 0, 100000, 0);

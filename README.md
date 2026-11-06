@@ -92,3 +92,8 @@ node test/e2e.js x shots    # browser end-to-end tests against the real server (
 ## Credits
 
 Quran data and API: UmmahAPI. Reader artwork: supplied by the app's author (make sure you have the right to use it).
+
+
+## Voice (Pray tab)
+
+The Pray tab can read each step aloud with the voice built into the phone or browser (no files, free). It automatically picks the most natural voice installed ("Natural", "Neural", Google, Siri...). Quality depends on the phone: Edge on Windows and recent Android/iPhone voices sound the most human. The Arabic prayer phrases are never read by the robot voice (it mispronounces them); the Al-Fatiha step has a "Hear the reciter" button that plays a real human reciter. The child or parent can switch the voice off with the speaker button.
