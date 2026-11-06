@@ -1,7 +1,7 @@
 /* Prayer corner texts (wudu, salah, prayer times) in English, French and Arabic. Plain data, no code. */
 window.DEEN_TXT = {
   en: {
-    ui: { nPray: 'Pray', title: 'Prayer corner', sub: 'Learn wudu and salah with games.', note: 'Ask a parent or teacher to show you. Families may do small things a little differently.',
+    ui: { hear: 'Hear the reciter', narrOn: 'Voice on', narrOff: 'Voice off', listen: 'Listen', nPray: 'Pray', title: 'Prayer corner', sub: 'Learn wudu and salah with games.', note: 'Ask a parent or teacher to show you. Families may do small things a little differently.',
       learnWudu: 'Learn wudu', gameWudu: 'Wudu game', learnSalah: 'Learn salah', gameSalah: 'Salah game', gameRakat: 'How many rakats?', gameTimes: 'Five prayers in order',
       descWudu: 'The 8 steps of washing for prayer', descSalah: 'One rakat, step by step', descRakat: 'Match each prayer to its rakats', descTimes: 'From dawn to night',
       next: 'Next', prev: 'Back', done: 'Done', again: 'Play again', playGame: 'Play the game', stepOf: 'Step {i} of {n}', rakats: 'rakats', rakat1: 'rakat',
@@ -19,7 +19,7 @@ window.DEEN_TXT = {
     ],
     salah: [
       { pose: 'takbir', t: 'Takbir', d: 'Stand facing the Qibla. Raise your hands and say Allahu Akbar.', ar: 'ٱللَّهُ أَكْبَرُ' },
-      { pose: 'qiyam', t: 'Stand', d: 'Stand with your hands folded. Say Al-Fatiha and another surah.', ar: 'ٱلْحَمْدُ لِلَّهِ رَبِّ ٱلْعَٰلَمِينَ' },
+      { pose: 'qiyam', t: 'Stand', d: 'Stand with your hands folded. Say Al-Fatiha and another surah.', ar: 'ٱلْحَمْدُ لِلَّهِ رَبِّ ٱلْعَٰلَمِينَ', aud: '001002' },
       { pose: 'ruku', t: 'Bow (ruku)', d: 'Say Allahu Akbar and bow. Hands on your knees, back straight. Say Subhana Rabbiyal Azeem.', ar: 'سُبْحَانَ رَبِّيَ ٱلْعَظِيمِ' },
       { pose: 'qiyam', t: 'Stand up', d: 'Rise saying Sami’a Allahu liman hamidah, then Rabbana wa lakal hamd.', ar: 'سَمِعَ ٱللَّهُ لِمَنْ حَمِدَهُ' },
       { pose: 'sujud', t: 'Prostrate (sujud)', d: 'Say Allahu Akbar and go down. Forehead, nose, hands, knees and toes touch the floor. Say Subhana Rabbiyal A’la.', ar: 'سُبْحَانَ رَبِّيَ ٱلْأَعْلَىٰ' },
@@ -36,7 +36,7 @@ window.DEEN_TXT = {
     ]
   },
   fr: {
-    ui: { nPray: 'Prière', title: 'Coin de la prière', sub: 'Apprends le woudou et la salat avec des jeux.', note: 'Demande à un parent ou à un enseignant de te montrer. Les familles peuvent faire de petites choses un peu différemment.',
+    ui: { hear: 'Écouter le récitant', narrOn: 'Voix activée', narrOff: 'Voix coupée', listen: 'Écouter', nPray: 'Prière', title: 'Coin de la prière', sub: 'Apprends le woudou et la salat avec des jeux.', note: 'Demande à un parent ou à un enseignant de te montrer. Les familles peuvent faire de petites choses un peu différemment.',
       learnWudu: 'Apprendre le woudou', gameWudu: 'Jeu du woudou', learnSalah: 'Apprendre la salat', gameSalah: 'Jeu de la salat', gameRakat: 'Combien de rak’a ?', gameTimes: 'Les cinq prières dans l’ordre',
       descWudu: 'Les 8 étapes de l’ablution', descSalah: 'Une rak’a, pas à pas', descRakat: 'Associe chaque prière à ses rak’a', descTimes: 'De l’aube à la nuit',
       next: 'Suivant', prev: 'Retour', done: 'Terminé', again: 'Rejouer', playGame: 'Jouer', stepOf: 'Étape {i} sur {n}', rakats: 'rak’a', rakat1: 'rak’a',
@@ -54,7 +54,7 @@ window.DEEN_TXT = {
     ],
     salah: [
       { pose: 'takbir', t: 'Takbir', d: 'Tiens-toi face à la Qibla. Lève les mains et dis Allahou akbar.', ar: 'ٱللَّهُ أَكْبَرُ' },
-      { pose: 'qiyam', t: 'Debout', d: 'Reste debout, les mains croisées. Récite Al-Fatiha et une autre sourate.', ar: 'ٱلْحَمْدُ لِلَّهِ رَبِّ ٱلْعَٰلَمِينَ' },
+      { pose: 'qiyam', t: 'Debout', d: 'Reste debout, les mains croisées. Récite Al-Fatiha et une autre sourate.', ar: 'ٱلْحَمْدُ لِلَّهِ رَبِّ ٱلْعَٰلَمِينَ', aud: '001002' },
       { pose: 'ruku', t: 'Inclinaison (rouku’)', d: 'Dis Allahou akbar et incline-toi, mains sur les genoux, dos droit. Dis Soubhana Rabbiyal ‘Azim.', ar: 'سُبْحَانَ رَبِّيَ ٱلْعَظِيمِ' },
       { pose: 'qiyam', t: 'Redresse-toi', d: 'Relève-toi en disant Sami’a Allahou liman hamidah, puis Rabbana wa lakal hamd.', ar: 'سَمِعَ ٱللَّهُ لِمَنْ حَمِدَهُ' },
       { pose: 'sujud', t: 'Prosternation (soujoud)', d: 'Dis Allahou akbar et descends. Front, nez, mains, genoux et orteils touchent le sol. Dis Soubhana Rabbiyal A’la.', ar: 'سُبْحَانَ رَبِّيَ ٱلْأَعْلَىٰ' },
@@ -71,7 +71,7 @@ window.DEEN_TXT = {
     ]
   },
   ar: {
-    ui: { nPray: 'الصلاة', title: 'ركن الصلاة', sub: 'تعلّم الوضوء والصلاة بالألعاب.', note: 'اطلب من أحد والديك أو معلّمك أن يريك. قد تختلف العائلات في أمور صغيرة.',
+    ui: { hear: 'استمع إلى القارئ', narrOn: 'الصوت يعمل', narrOff: 'الصوت متوقف', listen: 'استمع', nPray: 'الصلاة', title: 'ركن الصلاة', sub: 'تعلّم الوضوء والصلاة بالألعاب.', note: 'اطلب من أحد والديك أو معلّمك أن يريك. قد تختلف العائلات في أمور صغيرة.',
       learnWudu: 'تعلّم الوضوء', gameWudu: 'لعبة الوضوء', learnSalah: 'تعلّم الصلاة', gameSalah: 'لعبة الصلاة', gameRakat: 'كم ركعة؟', gameTimes: 'الصلوات الخمس بالترتيب',
       descWudu: 'خطوات الوضوء الثماني', descSalah: 'ركعة واحدة خطوة خطوة', descRakat: 'اربط كل صلاة بعدد ركعاتها', descTimes: 'من الفجر إلى الليل',
       next: 'التالي', prev: 'رجوع', done: 'انتهيت', again: 'العب مرة أخرى', playGame: 'العب اللعبة', stepOf: 'الخطوة {i} من {n}', rakats: 'ركعات', rakat1: 'ركعة',
@@ -89,7 +89,7 @@ window.DEEN_TXT = {
     ],
     salah: [
       { pose: 'takbir', t: 'التكبير', d: 'قف متجهًا إلى القبلة، وارفع يديك وقل: الله أكبر.', ar: 'ٱللَّهُ أَكْبَرُ' },
-      { pose: 'qiyam', t: 'القيام', d: 'قف وضع يديك على صدرك، واقرأ الفاتحة وسورة.', ar: 'ٱلْحَمْدُ لِلَّهِ رَبِّ ٱلْعَٰلَمِينَ' },
+      { pose: 'qiyam', t: 'القيام', d: 'قف وضع يديك على صدرك، واقرأ الفاتحة وسورة.', ar: 'ٱلْحَمْدُ لِلَّهِ رَبِّ ٱلْعَٰلَمِينَ', aud: '001002' },
       { pose: 'ruku', t: 'الركوع', d: 'قل الله أكبر وانحنِ، ويداك على ركبتيك وظهرك مستقيم. وقل: سبحان ربي العظيم.', ar: 'سُبْحَانَ رَبِّيَ ٱلْعَظِيمِ' },
       { pose: 'qiyam', t: 'الرفع من الركوع', d: 'ارفع قائلًا: سمع الله لمن حمده، ثم: ربنا ولك الحمد.', ar: 'سَمِعَ ٱللَّهُ لِمَنْ حَمِدَهُ' },
       { pose: 'sujud', t: 'السجود', d: 'قل الله أكبر واسجد. تلمس جبهتك وأنفك ويداك وركبتاك وأصابع قدميك الأرض. وقل: سبحان ربي الأعلى.', ar: 'سُبْحَانَ رَبِّيَ ٱلْأَعْلَىٰ' },

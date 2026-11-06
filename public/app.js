@@ -194,7 +194,7 @@ const DAY = 86400000;
 
 const GUEST_KEY = 'noornest.v1', ACCT_KEY = 'noornest.acct';
 let KEY = GUEST_KEY;
-const fresh = () => ({ lang: '', sound: true, mic: false, more: false, tour: false, kid: 'boy', mode: '', stars: 0, cards: {}, done: {}, weak: {}, seed: {}, log: {}, deen: {}, streak: { last: '', count: 0 } });
+const fresh = () => ({ lang: '', sound: true, mic: false, more: false, tour: false, kid: 'boy', mode: '', stars: 0, cards: {}, done: {}, weak: {}, seed: {}, log: {}, deen: {}, narr: true, streak: { last: '', count: 0 } });
 const ls = (k, v) => { try { if (v === undefined) return localStorage.getItem(k) || ''; if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} return ''; };
 function normalize(st) {
   st.streak = Object.assign({ last: '', count: 0 }, st.streak);
@@ -219,7 +219,7 @@ function mergeState(local, remote) {
   const o = normalize(Object.assign(fresh(), remote));
   /* a brand-new phone (tour not done yet) adopts the account's settings; otherwise this phone's choices win */
   const adopt = !!(remote.tour && !local.tour);
-  ['lang', 'sound', 'kid', 'mode'].forEach(k => { if (!adopt && local[k] !== undefined && local[k] !== '') o[k] = local[k]; });
+  ['lang', 'sound', 'kid', 'mode', 'narr'].forEach(k => { if (!adopt && local[k] !== undefined && local[k] !== '') o[k] = local[k]; });
   o.mic = !!local.mic;
   o.tour = !!(local.tour || remote.tour); o.more = !!(local.more || remote.more);
   o.stars = maxN(local.stars, remote.stars);
@@ -337,7 +337,7 @@ function playAyah(url, onEnd) {
     const p = audio.play(); if (p && p.catch) p.catch(() => {});
   } catch (e) {}
 }
-const stopAudio = () => { kidStop(); try { audio.onended = null; audio.onerror = null; audio.pause(); } catch (e) {} };
+const stopAudio = () => { hush(); kidStop(); try { audio.onended = null; audio.onerror = null; audio.pause(); } catch (e) {} };
 
 let toastTimer;
 function toast(msg) {
@@ -779,6 +779,29 @@ function parentsHTML() {
     '<div class="set"><button class="btn ghost big" data-act="reset">' + esc(t('pReset')) + '</button></div>';
 }
 
+/* ---------- narrator: the phone's own voice reads instructions (never the Arabic phrases) ---------- */
+const TTS = typeof speechSynthesis !== 'undefined' && typeof SpeechSynthesisUtterance !== 'undefined';
+const TTS_LANG = { en: 'en', fr: 'fr', ar: 'ar' };
+function bestVoice(lang) {
+  if (!TTS) return null;
+  const vs = speechSynthesis.getVoices().filter(v => (v.lang || '').toLowerCase().replace('_', '-').startsWith(TTS_LANG[lang] || 'en'));
+  if (!vs.length) return null;
+  const score = v => { const n = v.name || ''; return (/natural|neural/i.test(n) ? 6 : 0) + (/online/i.test(n) ? 2 : 0) + (/premium|enhanced|siri/i.test(n) ? 4 : 0) + (/google/i.test(n) ? 3 : 0) + (v.localService === false ? 1 : 0) + ((v.lang || '').toLowerCase().startsWith(TTS_LANG[lang] + '-') ? 0.5 : 0); };
+  return vs.sort((a, b) => score(b) - score(a))[0];
+}
+function speak(text) {
+  if (!TTS || !text || S.narr === false || !S.sound) return;
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text), v = bestVoice(S.lang);
+    u.lang = v ? v.lang : (S.lang === 'ar' ? 'ar-SA' : S.lang === 'fr' ? 'fr-FR' : 'en-US'); if (v) u.voice = v;
+    u.rate = S.lang === 'ar' ? .85 : .92; u.pitch = 1.05; u.volume = 1;
+    speechSynthesis.speak(u);
+  } catch (e) {}
+}
+const hush = () => { try { if (TTS) speechSynthesis.cancel(); } catch (e) {} };
+if (TTS) { try { speechSynthesis.getVoices(); speechSynthesis.onvoiceschanged = () => {}; } catch (e) {} }
+
 /* ---------- prayer corner: wudu, salah, rakats, prayer times ---------- */
 let dn = null, og = null, rk = null;
 const DT = () => (window.DEEN_TXT && (window.DEEN_TXT[S.lang] || window.DEEN_TXT.en)) || null;
@@ -820,8 +843,11 @@ function dnLearn() {
   const it = arr[i], last = i === n - 1;
   const phrase = it.ar ? '<div class="phrasebox"><small>' + esc(dt('saySo')) + '</small><div class="phrase" dir="rtl" lang="ar">' + esc(it.ar) + '</div></div>' : '';
   const end = last && dn.kind === 'wudu' ? '<div class="phrasebox"><small>' + esc(dt('wuduEnd')) + '</small><div class="phrase" dir="rtl" lang="ar">أَشْهَدُ أَنْ لَا إِلَٰهَ إِلَّا ٱللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ وَأَشْهَدُ أَنَّ مُحَمَّدًا عَبْدُهُ وَرَسُولُهُ</div><p class="sub" style="text-align:center">' + esc(dt('wuduEndEn')) + '</p></div>' : '';
-  showOv(deenHead(n, i, dt('stepOf', { i: i + 1, n })) + dnVisual(dn.kind, it) + '<h3 class="dtitle">' + (i + 1) + '. ' + esc(it.t) + '</h3><p class="ddesc">' + esc(it.d) + '</p>' + phrase + end +
+  const narr = TTS ? '<div class="row" style="margin-top:0"><button class="btn small ghost" data-act="narrtoggle" aria-pressed="' + (S.narr !== false) + '">' + (S.narr !== false ? '🔊 ' + esc(dt('narrOn')) : '🔇 ' + esc(dt('narrOff'))) + '</button>' + (S.narr !== false ? '<button class="btn small alt" data-act="narrsay">🔁 ' + esc(dt('listen')) + '</button>' : '') + '</div>' : '';
+  const rec2 = it.aud ? '<div class="row"><button class="btn small alt" data-act="reciter" data-u="' + it.aud + '">🎧 ' + esc(dt('hear')) + '</button></div>' : '';
+  showOv(deenHead(n, i, dt('stepOf', { i: i + 1, n })) + narr + dnVisual(dn.kind, it) + '<h3 class="dtitle">' + (i + 1) + '. ' + esc(it.t) + '</h3><p class="ddesc">' + esc(it.d) + '</p>' + phrase + rec2 + end +
     '<div class="row">' + (i > 0 ? '<button class="btn ghost" data-act="dnprev">‹ ' + esc(dt('prev')) + '</button>' : '') + '<button class="btn big" data-act="dnnext">' + esc(last ? dt('done') : dt('next')) + ' ›</button></div>');
+  speak(it.t + '. ' + it.d);
 }
 function ogRender() {
   const T = DT(), arr = T[og.kind], n = arr.length;
@@ -845,11 +871,12 @@ function rkRender() {
   showOv(deenHead(n, rk.i, dt('round', { i: rk.i + 1, n })) + '<div class="bigic">' + it.ic + '</div><h3 class="dtitle">' + esc(dt('rakatQ', { p: it.n })) + '</h3>' +
     '<div class="rkopts">' + [2, 3, 4].map(k => '<button class="ropt' + (rk.shake === k ? ' shake' : '') + '" data-act="rkpick" data-n="' + k + '"><b>' + k + '</b><small>' + esc(dt('rakats')) + '</small></button>').join('') + '</div>');
   rk.shake = 0;
+  speak(dt('rakatQ', { p: it.n }));
 }
 function deenOpen(w) {
   stopAudio();
   if (w === 'learnwudu' || w === 'learnsalah') { dn = { kind: w === 'learnwudu' ? 'wudu' : 'salah', i: 0, done: false }; og = rk = null; dnLearn(); }
-  else if (w === 'gamewudu' || w === 'gamesalah' || w === 'times') { const kind = w === 'times' ? 'times' : w === 'gamewudu' ? 'wudu' : 'salah'; const n = DT()[kind].length; let ord; do { ord = shuffle(Array.from({ length: n }, (_, i) => i)); } while (ord.every((v, i) => v === i)); og = { kind, order: ord, next: 0, miss: 0, streak: 0, shake: -1, hint: -1 }; dn = rk = null; ogRender(); }
+  else if (w === 'gamewudu' || w === 'gamesalah' || w === 'times') { const kind = w === 'times' ? 'times' : w === 'gamewudu' ? 'wudu' : 'salah'; const n = DT()[kind].length; let ord; do { ord = shuffle(Array.from({ length: n }, (_, i) => i)); } while (ord.every((v, i) => v === i)); og = { kind, order: ord, next: 0, miss: 0, streak: 0, shake: -1, hint: -1 }; dn = rk = null; ogRender(); speak(dt(kind === 'times' ? 'orderTimes' : 'order')); }
   else if (w === 'rakat') { rk = { order: shuffle([0, 1, 2, 3, 4]), i: 0, miss: 0, shake: 0 }; dn = og = null; rkRender(); }
 }
 
@@ -1313,10 +1340,13 @@ document.addEventListener('click', e => {
       if (gate && val === gate.a + gate.b) { gateOK = true; gate = null; } else if (gate) { gate.bad = true; gate.a = Math.floor(rnd(11, 30)); gate.b = Math.floor(rnd(11, 30)); }
       renderMain(); break;
     }
+    case 'narrtoggle': S.narr = S.narr === false; save(); if (S.narr === false) hush(); if (dn) dnLearn(); break;
+    case 'narrsay': { const it = dn && DT()[dn.kind][dn.i]; if (it) speak(it.t + '. ' + it.d); break; }
+    case 'reciter': { hush(); playAyah('https://everyayah.com/data/Alafasy_128kbps/' + String(el.dataset.u).replace(/[^0-9]/g, '') + '.mp3'); break; }
     case 'dopen': case 'dgo': deenOpen(el.dataset.w); break;
     case 'dnprev': if (dn && dn.i > 0) { dn.i--; dnLearn(); } break;
     case 'dnnext': if (dn) { if (dn.i < DT()[dn.kind].length - 1) { dn.i++; chime(dn.i); } else { dn.done = true; deenSet(dn.kind, { l: 1 }); save(); fanfare(); } dnLearn(); } break;
-    case 'ogpick': if (og) { const i = +el.dataset.i; if (i === og.next) { chime(og.next); og.next++; og.streak = 0; og.hint = -1; if (og.next >= DT()[og.kind].length) { deenResult(og.kind, og.miss, 'dopen" data-w="' + (og.kind === 'times' ? 'times' : 'game' + og.kind)); break; } } else { og.miss++; og.streak++; og.shake = i; if (og.streak >= 2) og.hint = og.next; tone(150, .2, 'sawtooth', .06); } ogRender(); } break;
+    case 'ogpick': if (og) { const i = +el.dataset.i; { const w = DT()[og.kind][i]; speak(w.n || w.t); } if (i === og.next) { chime(og.next); og.next++; og.streak = 0; og.hint = -1; if (og.next >= DT()[og.kind].length) { deenResult(og.kind, og.miss, 'dopen" data-w="' + (og.kind === 'times' ? 'times' : 'game' + og.kind)); break; } } else { og.miss++; og.streak++; og.shake = i; if (og.streak >= 2) og.hint = og.next; tone(150, .2, 'sawtooth', .06); } ogRender(); } break;
     case 'rkpick': if (rk) { const n = +el.dataset.n, ok2 = n === DT().times[rk.order[rk.i]].r; if (ok2) { chime(rk.i + 1); rk.i++; if (rk.i >= 5) { deenResult('rakat', rk.miss, 'dopen" data-w="rakat'); break; } } else { rk.miss++; rk.shake = n; tone(150, .2, 'sawtooth', .06); } rkRender(); } break;
     case 'au-view': readAuthFields(); Auth.view = el.dataset.v; Auth.msg = ''; Auth.privacy = false; render(); break;
     case 'au-privacy': { const n = $('#privnote'); if (n) n.hidden = !n.hidden; break; }
