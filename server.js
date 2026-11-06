@@ -152,6 +152,8 @@ function sanitizeState(x) {
   }
   const days = Object.keys(x.log || {}).filter(d => DAYRE.test(d)).sort().slice(-120);
   for (const d of days) { const e = x.log[d] || {}; o.log[d] = { ayahs: num(e.ayahs, 0, 9999, 0), reviews: num(e.reviews, 0, 9999, 0), stars: num(e.stars, 0, 9999, 0), recites: num(e.recites, 0, 9999, 0) }; }
+  o.deen = {};
+  for (const k of ['wudu', 'salah', 'times', 'rakat']) { const e = (x.deen || {})[k]; if (e && typeof e === 'object') o.deen[k] = { l: e.l ? 1 : 0, b: num(e.b, 0, 3, 0) }; }
   const st = x.streak || {};
   o.streak = { last: DAYRE.test(st.last) ? st.last : '', count: num(st.count, 0, 9999, 0) };
   return o;

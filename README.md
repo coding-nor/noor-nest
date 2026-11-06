@@ -11,6 +11,7 @@ A phone-first Quran memorization app for children (ages 5 to 12). Quran text and
 - **Games.** Catch the fireflies (word order), fill the blanks (8 to 12), listen-and-repeat part by part, then say it to Noor.
 - **A pet that grows**, stars, streaks, spaced review, and "tricky words" practice.
 - **Listens and corrects (optional mic).** If the child slips, the reader tilts its head ("Almost! Say it again"); when it is fixed, confetti and a cheer. The app keeps listening across the browser's own session breaks, and has a Start over button.
+- **Prayer corner (Pray tab).** Learn wudu (8 steps) and one rakat of salah with simple faceless drawings, then play order games, a "how many rakats" game and a five-prayers game. English, French and Arabic. Stars are earned once per improvement, so replaying can't farm stars. Texts are in `public/deen.js`: have a teacher or imam check them before you rely on them, because families and schools can differ in small details.
 - **Parent corner** (behind a small maths gate): weekly report, tricky words, age mode, account settings.
 - **Accounts for parents**, progress synced between phones, works offline once opened, installable on Android and iPhone.
 
@@ -82,6 +83,7 @@ For a real `.apk` file (this could not be built in the workspace used to write t
 
 ```
 npm test                    # server and security tests (11)
+node test/pray.js . shots   # prayer corner games (run from the folder above app/)
 node test/e2e.js x shots    # browser end-to-end tests against the real server (needs Playwright)
 ```
 
