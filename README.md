@@ -2,7 +2,7 @@
 
 A phone-first Quran memorization app for children (ages 5 to 12). Quran text and audio come from [UmmahAPI](https://ummahapi.com).
 
-**Built by:** edit the `AUTHORS` constant at the top of `public/app.js` and put your name (or both names).
+**Built by:** kadem nor el houda
 
 ## What it does
 
