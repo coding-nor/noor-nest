@@ -194,11 +194,13 @@ const DAY = 86400000;
 
 const GUEST_KEY = 'noornest.v1', ACCT_KEY = 'noornest.acct';
 let KEY = GUEST_KEY;
-const fresh = () => ({ lang: '', sound: true, mic: false, more: false, tour: false, kid: 'boy', mode: '', stars: 0, cards: {}, done: {}, weak: {}, seed: {}, log: {}, deen: {}, narr: true, streak: { last: '', count: 0 } });
+const fresh = () => ({ lang: '', sound: true, mic: false, more: false, tour: false, kid: 'boy', mode: '', stars: 0, cards: {}, done: {}, weak: {}, seed: {}, log: {}, deen: {}, narr: true, spent: 0, stick: {}, own: {}, wear: { hat: '', neck: '', bg: '' }, chest: '', story: {}, gm: { c: 0, m: 0, cd: '', md: '' }, deeds: { d: '', k: {} }, deedN: 0, streak: { last: '', count: 0 } });
 const ls = (k, v) => { try { if (v === undefined) return localStorage.getItem(k) || ''; if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} return ''; };
 function normalize(st) {
   st.streak = Object.assign({ last: '', count: 0 }, st.streak);
-  ['cards', 'done', 'weak', 'seed', 'log', 'deen'].forEach(k => { if (!st[k] || typeof st[k] !== 'object') st[k] = {}; });
+  ['cards', 'done', 'weak', 'seed', 'log', 'deen', 'stick', 'own', 'story'].forEach(k => { if (!st[k] || typeof st[k] !== 'object') st[k] = {}; });
+  st.wear = Object.assign({ hat: '', neck: '', bg: '' }, st.wear); st.gm = Object.assign({ c: 0, m: 0, cd: '', md: '' }, st.gm); st.deeds = Object.assign({ d: '', k: {} }, st.deeds); if (!st.deeds.k || typeof st.deeds.k !== 'object') st.deeds.k = {};
+  st.spent = +st.spent || 0; st.deedN = +st.deedN || 0; st.chest = st.chest || '';
   if (!I18N[st.lang]) { const nl = (navigator.language || 'en').slice(0, 2); st.lang = I18N[nl] ? nl : 'en'; }
   return st;
 }
@@ -235,6 +237,14 @@ function mergeState(local, remote) {
   o.seed = {};
   o.deen = {};
   [remote.deen || {}, local.deen || {}].forEach(src => Object.keys(src).forEach(k => { const e = o.deen[k] = o.deen[k] || {}; e.l = maxN(e.l, (src[k] || {}).l); e.b = maxN(e.b, (src[k] || {}).b); }));
+  o.stick = Object.assign({}, remote.stick, local.stick); o.own = Object.assign({}, remote.own, local.own); o.story = Object.assign({}, remote.story, local.story);
+  o.spent = maxN(local.spent, remote.spent); o.deedN = maxN(local.deedN, remote.deedN);
+  o.wear = Object.assign({ hat: '', neck: '', bg: '' }, remote.wear, local.wear);
+  o.chest = (local.chest || '') > (remote.chest || '') ? local.chest : (remote.chest || '');
+  const lg = local.gm || {}, rg = remote.gm || {};
+  o.gm = { c: maxN(lg.c, rg.c), m: maxN(lg.m, rg.m), cd: (lg.cd || '') > (rg.cd || '') ? lg.cd : (rg.cd || ''), md: (lg.md || '') > (rg.md || '') ? lg.md : (rg.md || '') };
+  const ld = local.deeds || {}, rd = remote.deeds || {};
+  o.deeds = ld.d === rd.d ? { d: ld.d || '', k: Object.assign({}, rd.k, ld.k) } : ((ld.d || '') > (rd.d || '') ? { d: ld.d, k: ld.k || {} } : { d: rd.d || '', k: rd.k || {} });
   return normalize(o);
 }
 function persistLocal() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
@@ -420,10 +430,10 @@ function petSVG(stage, mood) {
       eyes(82, 118, 116, true) +
       '<circle cx="68" cy="132" r="7" fill="#ff8fa3" opacity=".7"/><circle cx="132" cy="132" r="7" fill="#ff8fa3" opacity=".7"/>' +
       '<path d="M92 128 L108 128 L100 142Z" fill="#ff9a3c"/>' + scarf +
-      '<ellipse cx="84" cy="188" rx="12" ry="6" fill="#ff9a3c"/><ellipse cx="116" cy="188" rx="12" ry="6" fill="#ff9a3c"/>' +
+      '<ellipse cx="84" cy="188" rx="12" ry="6" fill="#ff9a3c"/><ellipse cx="116" cy="188" rx="12" ry="6" fill="#ff9a3c"/>' + wearFG() +
       '</g>' + crown + '</g>';
   }
-  return '<svg class="pet m-' + mood + ' s' + stage + '" viewBox="0 0 200 230" role="img" aria-label="Noor">' + ring + nest + body + zzz + '</svg>';
+  return '<svg class="pet m-' + mood + ' s' + stage + '" viewBox="0 0 200 230" role="img" aria-label="Noor">' + wearBG(S.wear && S.wear.bg) + ring + nest + body + zzz + '</svg>';
 }
 function setPetMood(root, mood) {
   const p = root && root.querySelector('.pet'); if (!p) return;
@@ -687,9 +697,10 @@ function render() {
   document.documentElement.lang = S.lang;
   document.documentElement.dir = t('dir');
   if (Auth.gate) { ov().hidden = true; $('#app').innerHTML = authHTML(); return; }
+  checkStickers();
   const due = dueKeys().length;
   const PT = DT();
-  const navs = [['home', '🏠', t('nHome')], ['learn', '📖', t('nLearn')], ['pray', '🕌', PT ? PT.ui.nPray : 'Pray'], ['review', '🔔', t('nReview')], ['parents', '👪', t('nParents')]];
+  const navs = [['home', '🏠', t('nHome')], ['learn', '📖', t('nLearn')], ['stories', '📚', ft('nStories') || 'Stories'], ['pray', '🕌', PT ? PT.ui.nPray : 'Pray'], ['play', '🎮', ft('nPlay') || 'Play'], ['review', '🔔', t('nReview')], ['parents', '👪', t('nParents')]];
   $('#app').innerHTML =
     '<header class="top"><div class="brand">🌙 ' + esc(t('appName')) + '</div><div class="starcount" aria-label="stars">⭐ ' + S.stars + '</div></header>' +
     '<main id="main"></main>' +
@@ -699,7 +710,7 @@ function render() {
 }
 function renderMain() {
   const m = $('#main'); if (!m) return;
-  m.innerHTML = view === 'home' ? homeHTML() : view === 'learn' ? learnHTML() : view === 'pray' ? prayHTML() : view === 'review' ? reviewHomeHTML() : parentsHTML();
+  m.innerHTML = view === 'home' ? homeHTML() + funHomeHTML() : view === 'learn' ? learnHTML() : view === 'stories' ? storiesHTML() : view === 'play' ? playHTML() : view === 'pray' ? prayHTML() : view === 'review' ? reviewHomeHTML() : parentsHTML();
 }
 
 
@@ -775,6 +786,7 @@ function parentsHTML() {
     '<div class="set"><label class="sw">' + esc(t('pMic')) + '<input type="checkbox" data-set="mic"' + (S.mic ? ' checked' : '') + (SR ? '' : ' disabled') + '></label><small>' + esc(t('pMicNote')) + '</small></div>' +
         '<div class="set"><label class="sw">' + esc(t('pMore')) + '<input type="checkbox" data-set="more"' + (S.more ? ' checked' : '') + '></label><small>' + esc(t('pMoreNote')) + '</small></div>' +
     '<div class="set"><label class="sw">' + esc(t('pLang')) + '<select id="lang-sel"><option value="en"' + (S.lang === 'en' ? ' selected' : '') + '>English</option><option value="fr"' + (S.lang === 'fr' ? ' selected' : '') + '>Français</option><option value="ar"' + (S.lang === 'ar' ? ' selected' : '') + '>العربية</option></select></label></div>' +
+    deedsHTML() +
     accountHTML() +
     '<div class="set"><button class="btn ghost big" data-act="reset">' + esc(t('pReset')) + '</button></div>';
 }
@@ -883,8 +895,214 @@ function deenOpen(w) {
 /* ---------- overlay plumbing ---------- */
 const ov = () => $('#ov');
 let lesson = null, review = null, rec = null, drill = null, pr = null;
+/* ---------- fun: stickers, dress-up shop, daily chest, mini games, prophet stories, good deeds ---------- */
+const FC = () => window.FUN_CAT || { stickers: [], items: [], stories: [], quotes: {} };
+const FTX = () => (window.FUN_TXT && (window.FUN_TXT[S.lang] || window.FUN_TXT.en)) || null;
+const ft = (k, v) => { const T = FTX(); let x = (T && T.ui[k]) || ''; if (v) Object.keys(v).forEach(n => { x = x.replace('{' + n + '}', v[n]); }); return x; };
+const ftn = (grp, id) => { const T = FTX(); return (T && T[grp] && T[grp][id]) || id; };
+const todayS = () => dayStr(new Date());
+const avail = () => Math.max(0, S.stars - (S.spent || 0));
+let cg = null, mm = null, sty = null, fxTimer = 0;
+const clearFx = () => { clearTimeout(fxTimer); fxTimer = 0; };
+
+/* stickers: earned by doing things; checked every time the screen is drawn */
+const storyCount = () => Object.keys(S.story).length;
+const STK_RULE = {
+  first: () => totalDone() >= 1, ay5: () => totalDone() >= 5, ay15: () => totalDone() >= 15,
+  st10: () => S.stars >= 10, st50: () => S.stars >= 50, st100: () => S.stars >= 100,
+  str3: () => streakNow() >= 3, str7: () => streakNow() >= 7,
+  wudu: () => !!deenOf('wudu').l, salah: () => !!deenOf('salah').l,
+  pg: () => ['wudu', 'salah', 'times', 'rakat'].some(k => deenOf(k).b >= 3),
+  s1: () => storyCount() >= 1, s3: () => storyCount() >= 3, sall: () => storyCount() >= FC().stories.length,
+  g1: () => S.gm.c >= 1, g2: () => S.gm.m >= 1, shop: () => Object.keys(S.own).length >= 1, deed: () => S.deedN >= 5
+};
+function giveSticker(id) {
+  if (S.stick[id]) return false;
+  const c = FC().stickers.find(x => x.id === id); if (!c) return false;
+  S.stick[id] = 1; save(); setTimeout(() => { toast(c.e + ' ' + ft('newStk') + ' ' + ftn('stk', id)); chime(3); }, 250); return true;
+}
+function checkStickers() {
+  if (!FTX()) return;
+  Object.keys(STK_RULE).forEach(id => { if (!S.stick[id] && STK_RULE[id]()) giveSticker(id); });
+}
+
+/* Noor's outfits: drawn on top of the pet (hat, neck) or behind it (background) */
+function wearBG(id) {
+  const g = 'bg' + id;
+  if (id === 'sky') return '<defs><linearGradient id="' + g + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8fd3ff"/><stop offset="1" stop-color="#e6f7ff"/></linearGradient></defs><rect x="0" y="0" width="200" height="230" rx="22" fill="url(#' + g + ')"/><g fill="#fff"><ellipse cx="46" cy="44" rx="26" ry="11"/><ellipse cx="64" cy="38" rx="18" ry="11"/><ellipse cx="150" cy="70" rx="24" ry="10"/><ellipse cx="166" cy="64" rx="15" ry="9"/></g><circle cx="168" cy="26" r="14" fill="#ffd96b"/>';
+  if (id === 'garden') return '<defs><linearGradient id="' + g + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bfe8ff"/><stop offset="1" stop-color="#eaf9ff"/></linearGradient></defs><rect x="0" y="0" width="200" height="230" rx="22" fill="url(#' + g + ')"/><path d="M0 170 Q60 140 120 168 T200 156 V230 H0Z" fill="#7bd28f"/><g><circle cx="30" cy="190" r="6" fill="#ff8fa3"/><circle cx="170" cy="184" r="6" fill="#ffd96b"/><circle cx="148" cy="204" r="5" fill="#fff"/><circle cx="52" cy="210" r="5" fill="#8fb8ff"/></g><circle cx="40" cy="40" r="14" fill="#ffd96b"/>';
+  if (id === 'night') return '<defs><linearGradient id="' + g + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1b1a4e"/><stop offset="1" stop-color="#3b2f7a"/></linearGradient></defs><rect x="0" y="0" width="200" height="230" rx="22" fill="url(#' + g + ')"/><path d="M158 30 a22 22 0 1 0 12 38 a18 18 0 1 1 -12 -38z" fill="#ffe89a"/><g fill="#fff"><circle cx="30" cy="30" r="2"/><circle cx="64" cy="58" r="1.6"/><circle cx="110" cy="24" r="2"/><circle cx="24" cy="96" r="1.6"/><circle cx="178" cy="110" r="2"/><circle cx="90" cy="82" r="1.4"/></g>';
+  return '';
+}
+function wearFG() {
+  const w = S.wear || {}; let s = '';
+  if (w.hat === 'kufi') s += '<g><path d="M72 90 Q100 52 128 90 Z" fill="#fff"/><path d="M72 90 Q100 98 128 90" fill="none" stroke="#d9d4ee" stroke-width="3"/><g fill="#7be0ad"><circle cx="86" cy="82" r="2.4"/><circle cx="100" cy="74" r="2.4"/><circle cx="114" cy="82" r="2.4"/></g></g>';
+  if (w.hat === 'party') s += '<g><path d="M84 88 L100 36 L116 88Z" fill="#ff8fa3"/><path d="M90 74 L110 74 M87 82 L113 82" stroke="#fff" stroke-width="3"/><circle cx="100" cy="34" r="6" fill="#ffd96b"/></g>';
+  if (w.hat === 'flowers') s += '<g><circle cx="76" cy="88" r="7" fill="#ff8fa3"/><circle cx="90" cy="80" r="7" fill="#ffd96b"/><circle cx="104" cy="78" r="7" fill="#fff"/><circle cx="118" cy="82" r="7" fill="#8fb8ff"/><circle cx="127" cy="92" r="6" fill="#ff8fa3"/><g fill="#7bd28f"><circle cx="97" cy="88" r="4"/><circle cx="111" cy="86" r="4"/></g></g>';
+  if (w.neck === 'bow') s += '<g><path d="M100 158 L80 148 L80 168Z" fill="#ff5d7a"/><path d="M100 158 L120 148 L120 168Z" fill="#ff5d7a"/><circle cx="100" cy="158" r="6" fill="#d83a58"/></g>';
+  if (w.neck === 'starn') s += '<g><path d="M76 150 Q100 176 124 150" fill="none" stroke="#fff6e0" stroke-width="2.5"/><path d="M100 160 l4 9 9 1 -7 6 2 9 -8 -5 -8 5 2 -9 -7 -6 9 -1z" fill="#ffd96b" stroke="#e0a82e" stroke-width="1.2"/></g>';
+  return s;
+}
+
+/* sticker book, shop, chest */
+function stickersHTML() {
+  const list = FC().stickers, have = list.filter(x => S.stick[x.id]).length;
+  const cells = list.map(x => S.stick[x.id]
+    ? '<div class="stk on"><span class="se">' + x.e + '</span><small>' + esc(ftn('stk', x.id)) + '</small></div>'
+    : '<div class="stk"><span class="se">❔</span><small>' + esc(x.c ? ft('fromChest') : ftn('hint', x.id)) + '</small></div>').join('');
+  return headHTML('', ft('cStick')) + '<h3 class="dtitle">' + esc(ft('cStickD', { n: have, m: list.length })) + '</h3><div class="stkgrid">' + cells + '</div>';
+}
+function shopHTML() {
+  const cats = ['hat', 'neck', 'bg'];
+  const sections = cats.map(c => '<div class="shopcat"><b>' + esc(ftn('cat', c)) + '</b><div class="shopgrid">' + FC().items.filter(i => i.cat === c).map(i => {
+    const own = S.own[i.id], on = S.wear[c] === i.id;
+    const btn = own ? '<button class="btn small ' + (on ? 'ghost' : 'alt') + '" data-act="wear" data-i="' + i.id + '">' + esc(on ? ft('off') : ft('wear')) + '</button>' : '<button class="btn small" data-act="buy" data-i="' + i.id + '">' + esc(ft('buy')) + ' · ' + i.cost + ' ⭐</button>';
+    return '<div class="shopit' + (on ? ' on' : '') + '"><span class="se">' + i.e + '</span><small>' + esc(ftn('item', i.id)) + '</small>' + btn + '</div>';
+  }).join('') + '</div></div>').join('');
+  return headHTML('', ft('cShop')) + '<div class="petmini" style="width:180px;margin-top:6px">' + petSVG(Math.max(2, stageNow()), 'happy') + '</div><p class="stepcap" style="font-size:1.05rem;margin:0">' + esc(ft('stars', { n: avail() })) + '</p>' + sections;
+}
+function chestHTML(state) {
+  const ready = S.chest !== todayS();
+  if (state && state.res) return headHTML('', ft('chest')) + '<div class="bigic">' + state.res.e + '</div><p class="stepcap" style="font-size:1.4rem">' + esc(state.res.msg) + '</p><div class="cta"><button class="btn big" data-act="lclose">' + esc(ft('close')) + '</button></div>';
+  return headHTML('', ft('chest')) + '<div class="bigic chestbig' + (ready ? ' pulse' : '') + '">' + (ready ? '🎁' : '📦') + '</div><p class="stepcap" style="font-size:1.3rem">' + esc(ready ? ft('chestOpen') : ft('chestWait')) + '</p>' + (ready ? '<div class="cta"><button class="btn big" data-act="chestdo">🎁 ' + esc(ft('chest')) + '</button></div>' : '<div class="cta"><button class="btn big ghost" data-act="lclose">' + esc(ft('close')) + '</button></div>');
+}
+function chestOpen() {
+  if (S.chest === todayS()) return;
+  S.chest = todayS();
+  const unStk = FC().stickers.filter(x => x.c && !S.stick[x.id]), unIt = FC().items.filter(x => !S.own[x.id]), r = Math.random();
+  let res;
+  if (r < .5 && unStk.length) { const x = unStk[Math.floor(Math.random() * unStk.length)]; S.stick[x.id] = 1; res = { e: x.e, msg: ft('chestStk') + ' ' + ftn('stk', x.id) }; }
+  else if (r > .86 && unIt.length) { const x = unIt[Math.floor(Math.random() * unIt.length)]; S.own[x.id] = 1; res = { e: x.e, msg: ft('chestItem') + ' ' + ftn('item', x.id) }; }
+  else { const n = 1 + Math.floor(Math.random() * 3); S.stars += n; addLog('stars', n); res = { e: '⭐', msg: ft('chestStars', { n }) }; }
+  save(); chime(4); confetti(); showOv(chestHTML({ res })); speak(res.msg);
+}
+
+/* games */
+const GAME_DAY = (k, dk) => { if (S.gm[dk] === todayS()) return 0; S.gm[dk] = todayS(); S.stars += 1; addLog('stars', 1); return 1; };
+async function startCatch() {
+  clearFx(); cg = { words: null, next: 0, got: [], done: false, loading: true };
+  showOv(headHTML('', ft('cCatch')) + loadingHTML());
+  let words = null, keys = Object.keys(S.done).filter(k => KEYRE_FUN.test(k)).sort(() => Math.random() - .5);
+  for (const k of keys.slice(0, 4)) {
+    try { const p = k.split(':'); const sj = await getSurah(+p[0]); const v = sj.verses[+p[1] - 1]; const w = v ? wordsOf(v) : []; if (w.length >= 3) { words = w.slice(0, 6); break; } } catch (e) {}
+  }
+  if (!words) words = ['قُلْ', 'هُوَ', 'ٱللَّهُ', 'أَحَدٌ'];
+  if (!cg) return; cg.words = words; cg.loading = false; catchRender(true);
+  speak(ft('catchPrompt'));
+}
+function catchRender(first) {
+  if (!cg) return;
+  const n = cg.words.length;
+  const slots = cg.words.map((w, i) => '<span class="cslot' + (i < cg.next ? ' got' : '') + '" dir="rtl" lang="ar">' + (i < cg.next ? esc(w) : '…') + '</span>').join('');
+  if (cg.done) { showOv(headHTML('', ft('cCatch')) + '<div class="bigic">🎯</div><p class="stepcap" style="font-size:1.4rem">' + esc(ft('catchWin')) + '</p><div class="cslots" style="margin:8px 0">' + slots + '</div>' + (cg.bonus ? '<p class="sub">' + esc(ft('bonus')) + '</p>' : '') + '<div class="cta"><button class="btn big alt" data-act="catchgo">' + esc(ft('play')) + '</button><button class="btn big ghost" data-act="lclose">' + esc(ft('close')) + '</button></div>'); return; }
+  const fall = cg.words.map((w, i) => i < cg.next ? '' : '<button class="fall" data-act="cpick" data-i="' + i + '" dir="rtl" lang="ar" style="left:' + Math.round(4 + (i * 83 / Math.max(1, n - 1)) % 70) + '%;animation-duration:' + (9 + (i * 3) % 5) + 's;animation-delay:-' + (i * 2.3).toFixed(1) + 's">' + esc(w) + '</button>').join('');
+  showOv(headHTML('', ft('cCatch')) + '<p class="stepcap" style="margin:4px 0">' + esc(ft('catchPrompt')) + '</p><div class="cslots" dir="rtl">' + slots + '</div><div class="fallarea">' + fall + '</div>');
+}
+function catchPick(i) {
+  if (!cg || cg.done) return;
+  if (i === cg.next) {
+    chime(cg.next); cg.next++;
+    if (cg.next >= cg.words.length) { cg.done = true; S.gm.c++; cg.bonus = GAME_DAY('c', 'cd'); save(); confetti(); speak(ft('catchWin')); }
+    catchRender();
+  } else { tone(150, .2, 'sawtooth', .05); const el = document.querySelector('.fall[data-i="' + i + '"]'); if (el) { el.classList.add('shk'); setTimeout(() => el.classList.remove('shk'), 400); } }
+}
+const KEYRE_FUN = /^\d{1,3}:\d{1,3}$/;
+function startMemo() {
+  clearFx();
+  const kind = ['wudu', 'salah', 'times'][Math.floor(Math.random() * 3)], items = DT() ? DT()[kind] : null;
+  if (!items) return;
+  const idx = shuffle(items.map((_, i) => i)).slice(0, 6), cards = [];
+  idx.forEach(i => { const x = items[i]; cards.push({ p: i, k: 'e', v: x.ic }); cards.push({ p: i, k: 't', v: x.n || x.t }); });
+  mm = { cards: shuffle(cards), open: [], matched: {}, moves: 0, lock: false, bonus: 0 };
+  memoRender();
+  speak(ft('memoPrompt'));
+}
+function memoRender() {
+  if (!mm) return;
+  const total = mm.cards.length / 2, found = Object.keys(mm.matched).length;
+  if (found >= total) { showOv(headHTML('', ft('cMemo')) + '<div class="bigic">🧠</div><p class="stepcap" style="font-size:1.4rem">' + esc(ft('memoWin')) + '</p><p class="sub">' + esc(ft('moves', { n: mm.moves })) + '</p>' + (mm.bonus ? '<p class="sub">' + esc(ft('bonus')) + '</p>' : '') + '<div class="cta"><button class="btn big alt" data-act="memogo">' + esc(ft('play')) + '</button><button class="btn big ghost" data-act="lclose">' + esc(ft('close')) + '</button></div>'); return; }
+  const grid = mm.cards.map((c, i) => { const up = mm.open.includes(i) || mm.matched[c.p]; return '<button class="mcard' + (up ? ' up' : '') + (mm.matched[c.p] ? ' ok' : '') + (c.k === 't' ? ' tx' : '') + '" data-act="mflip" data-i="' + i + '" aria-label="card">' + (up ? esc(c.v) : '🌙') + '</button>'; }).join('');
+  showOv(headHTML('', ft('cMemo')) + '<p class="stepcap" style="margin:4px 0">' + esc(ft('memoPrompt')) + ' · ' + esc(ft('moves', { n: mm.moves })) + '</p><div class="mgrid">' + grid + '</div>');
+}
+function memoFlip(i) {
+  if (!mm || mm.lock || mm.open.includes(i) || mm.matched[mm.cards[i].p]) return;
+  mm.open.push(i); const c = mm.cards[i]; if (c.k === 't') speak(c.v); else chime(1);
+  if (mm.open.length === 2) {
+    mm.moves++; const a = mm.cards[mm.open[0]], b = mm.cards[mm.open[1]];
+    if (a.p === b.p && a.k !== b.k) { mm.matched[a.p] = 1; mm.open = []; chime(4); if (Object.keys(mm.matched).length >= mm.cards.length / 2) { S.gm.m++; mm.bonus = GAME_DAY('m', 'md'); save(); confetti(); speak(ft('memoWin')); } }
+    else { mm.lock = true; memoRender(); fxTimer = setTimeout(() => { if (!mm) return; mm.open = []; mm.lock = false; memoRender(); }, 1000); return; }
+  }
+  memoRender();
+}
+
+/* prophet stories: read aloud by the narrator; pictures show only places and things */
+function storiesHTML() {
+  const T = FTX(); if (!T) return '';
+  return '<h2>📚 ' + esc(ft('storiesTitle')) + '</h2><p class="sub" style="text-align:start">' + esc(ft('storiesSub')) + '</p><div class="pgrid">' + FC().stories.map(s => '<button class="pcard" data-act="storyopen" data-id="' + s.id + '"><span class="pic">' + s.e + '</span><b>' + esc(T.st[s.id].t) + '</b><small>' + esc(T.st[s.id].ref) + '</small>' + (S.story[s.id] ? '<span class="tick">✓ ' + esc(ft('read')) + '</span>' : '') + '</button>').join('') + '</div><p class="sub" style="font-size:.85rem">🤍 ' + esc(ft('peace')) + '</p>';
+}
+function storyRender() {
+  if (!sty) return;
+  const T = FTX(), meta = FC().stories.find(x => x.id === sty.id), st = T.st[sty.id], n = st.pages.length;
+  if (sty.end) {
+    showOv(headHTML('', st.t) + '<div class="bigic">🌟</div><h3 class="dtitle">' + esc(ft('learn')) + '</h3><p class="ddesc">' + esc(st.moral) + '</p>' + (sty.gain ? '<p class="sub">' + esc(ft('storyDone', { n: sty.gain })) + '</p>' : '') + '<div class="row"><button class="btn small ghost" data-act="narrsay">🔊 ' + esc(dt('listen')) + '</button></div><div class="cta"><button class="btn big alt" data-act="storyopen" data-id="' + sty.id + '">' + esc(ft('again')) + '</button><button class="btn big ghost" data-act="lclose">' + esc(ft('close')) + '</button></div>');
+    speak(st.moral); return;
+  }
+  const i = sty.p, q = (FC().quotes[sty.id] || {})[i], last = i === n - 1;
+  const narr = TTS ? '<div class="row" style="margin-top:0"><button class="btn small ghost" data-act="narrtoggle" aria-pressed="' + (S.narr !== false) + '">' + (S.narr !== false ? '🔊 ' + esc(dt('narrOn')) : '🔇 ' + esc(dt('narrOff'))) + '</button><button class="btn small alt" data-act="narrsay">🔊 ' + esc(dt('listen')) + '</button></div>' : '';
+  showOv(deenHead(n, i, ft('page', { i: i + 1, n })) + narr + '<div class="scene">' + meta.sc[i] + '</div><h3 class="dtitle">' + esc(st.t) + '</h3><p class="ddesc storytxt">' + esc(st.pages[i]) + '</p>' + (q ? '<div class="phrasebox"><div class="phrase" dir="rtl" lang="ar">' + esc(q) + '</div></div>' : '') +
+    '<div class="row">' + (i > 0 ? '<button class="btn ghost" data-act="storyprev">‹ ' + esc(ft('back')) + '</button>' : '') + '<button class="btn big" data-act="storynext">' + esc(last ? ft('finish') : ft('next')) + ' ›</button></div>');
+  speak(st.pages[i]);
+}
+function storyOpen(id) { sty = { id, p: 0, end: false, gain: 0 }; dn = og = rk = null; storyRender(); }
+function storyNext() {
+  const n = FTX().st[sty.id].pages.length;
+  if (sty.p < n - 1) { sty.p++; storyRender(); return; }
+  if (!S.story[sty.id]) { S.story[sty.id] = 1; S.stars += 2; addLog('stars', 2); sty.gain = 2; bumpStreak(); save(); confetti(); chime(4); }
+  sty.end = true; storyRender();
+}
+
+/* play hub, home extras, good deeds */
+function playHTML() {
+  const T = FTX(); if (!T) return '';
+  const card = (a, ic, title, desc) => '<button class="pcard" data-act="' + a + '"><span class="pic">' + ic + '</span><b>' + esc(title) + '</b><small>' + esc(desc) + '</small></button>';
+  const have = FC().stickers.filter(x => S.stick[x.id]).length, ready = S.chest !== todayS();
+  return '<h2>🎮 ' + esc(ft('playTitle')) + '</h2>' +
+    '<button class="chestbar' + (ready ? ' ready' : '') + '" data-act="chest"><span class="pic">' + (ready ? '🎁' : '📦') + '</span><span><b>' + esc(ft('chest')) + '</b><br><small>' + esc(ready ? ft('chestReady') : ft('chestWait')) + '</small></span></button>' +
+    '<div class="pgrid">' + card('catch', '🎯', ft('cCatch'), ft('cCatchD')) + card('memo', '🧠', ft('cMemo'), ft('cMemoD')) + card('stickers', '🌟', ft('cStick'), ft('cStickD', { n: have, m: FC().stickers.length })) + card('shop', '👗', ft('cShop'), ft('cShopD')) + '</div>';
+}
+function funHomeHTML() {
+  if (!FTX() || !(S.tour || S.mode)) return '';
+  return '<div class="homefun"><button class="btn small alt' + (S.chest !== todayS() ? ' pulse' : '') + '" data-act="chest">' + esc(ft('homeChest')) + '</button><button class="btn small ghost" data-act="shop">' + esc(ft('homeDress')) + '</button></div>';
+}
+const DEEDS = ['wudu', 'pray', 'help', 'quran', 'kind'], DEED_IC = { wudu: '💧', pray: '🕌', help: '🤝', quran: '📖', kind: '💛' };
+function deedsHTML() {
+  if (!FTX()) return '';
+  const d = S.deeds && S.deeds.d === todayS() ? S.deeds.k : {};
+  return '<div class="set"><b>' + esc(ft('deedsTitle')) + '</b><small>' + esc(ft('deedsNote')) + '</small><div class="deeds">' + DEEDS.map(k => '<button class="deed' + (d[k] ? ' on' : '') + '" data-act="deed" data-k="' + k + '"' + (d[k] ? ' disabled' : '') + '><span>' + DEED_IC[k] + '</span> ' + esc(ft('d_' + k)) + (d[k] ? ' ✓' : '') + '</button>').join('') + '</div></div>';
+}
+function funClick(act, el) { const h = funClickIn(act, el); if (h) checkStickers(); return h; }
+function funClickIn(act, el) {
+  switch (act) {
+    case 'chest': showOv(chestHTML()); return true;
+    case 'chestdo': chestOpen(); return true;
+    case 'catch': case 'catchgo': startCatch(); return true;
+    case 'cpick': catchPick(+el.dataset.i); return true;
+    case 'memo': case 'memogo': startMemo(); return true;
+    case 'mflip': memoFlip(+el.dataset.i); return true;
+    case 'stickers': showOv(stickersHTML()); return true;
+    case 'shop': showOv(shopHTML()); return true;
+    case 'buy': { const it = FC().items.find(x => x.id === el.dataset.i); if (!it || S.own[it.id]) return true; if (avail() < it.cost) { toast(ft('need')); tone(150, .2, 'sawtooth', .05); return true; } S.spent = (S.spent || 0) + it.cost; S.own[it.id] = 1; S.wear[it.cat] = it.id; save(); chime(4); toast(ft('bought')); showOv(shopHTML()); return true; }
+    case 'wear': { const it = FC().items.find(x => x.id === el.dataset.i); if (!it || !S.own[it.id]) return true; S.wear[it.cat] = S.wear[it.cat] === it.id ? '' : it.id; save(); showOv(shopHTML()); return true; }
+    case 'storyopen': storyOpen(el.dataset.id); return true;
+    case 'storynext': storyNext(); return true;
+    case 'storyprev': if (sty && sty.p > 0) { sty.p--; storyRender(); } return true;
+    case 'deed': { const k = el.dataset.k; if (DEEDS.indexOf(k) < 0) return true; if (!S.deeds || S.deeds.d !== todayS()) S.deeds = { d: todayS(), k: {} }; if (S.deeds.k[k]) return true; S.deeds.k[k] = 1; S.deedN = (S.deedN || 0) + 1; S.stars += 1; addLog('stars', 1); save(); toast(ft('deedStar')); render(); return true; }
+  }
+  return false;
+}
+
 function showOv(html) { const o = ov(); o.hidden = false; o.innerHTML = '<div class="ovin">' + html + '</div>'; o.scrollTop = 0; }
-function closeOv() { stopAudio(); if (rec) { rec.destroy(); rec = null; } dn = og = rk = null; lesson = null; review = null; drill = null; pr = null; const o = ov(); o.hidden = true; o.innerHTML = ''; render(); }
+function closeOv() { stopAudio(); if (rec) { rec.destroy(); rec = null; } dn = og = rk = null; cg = mm = sty = null; clearFx(); lesson = null; review = null; drill = null; pr = null; const o = ov(); o.hidden = true; o.innerHTML = ''; render(); }
 const loadingHTML = () => '<p class="stepcap" style="margin-top:40vh">' + esc(t('loading')) + '</p>';
 function errHTML(retryAct) { return '<div class="lhead"><button class="x" data-act="lclose" aria-label="' + esc(t('close')) + '">✕</button></div><p class="stepcap" style="margin-top:30vh">' + esc(t('loadErr')) + '</p><div class="row"><button class="btn" data-act="' + retryAct + '">' + esc(t('retry')) + '</button></div>'; }
 const headHTML = (dots, right) => '<div class="lhead"><button class="x" data-act="lclose" aria-label="' + esc(t('close')) + '">✕</button><div class="dots">' + dots + '</div><div class="lsurah">' + esc(right) + '</div></div>';
@@ -1294,6 +1512,7 @@ function nextUndone() {
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]'); if (!el) return;
   const act = el.dataset.act;
+  if (funClick(act, el)) return;
   switch (act) {
     case 'nav': view = el.dataset.v; if (view === 'parents') { gateOK = false; gate = null; } render(); break;
     case 'pet': {
@@ -1340,8 +1559,8 @@ document.addEventListener('click', e => {
       if (gate && val === gate.a + gate.b) { gateOK = true; gate = null; } else if (gate) { gate.bad = true; gate.a = Math.floor(rnd(11, 30)); gate.b = Math.floor(rnd(11, 30)); }
       renderMain(); break;
     }
-    case 'narrtoggle': S.narr = S.narr === false; save(); if (S.narr === false) hush(); if (dn) dnLearn(); break;
-    case 'narrsay': { const it = dn && DT()[dn.kind][dn.i]; if (it) speak(it.t + '. ' + it.d); break; }
+    case 'narrtoggle': S.narr = S.narr === false; save(); if (S.narr === false) hush(); if (dn) dnLearn(); else if (sty) storyRender(); break;
+    case 'narrsay': { if (sty) { const T = FTX().st[sty.id]; speak(sty.end ? T.moral : T.pages[sty.p]); break; } const it = dn && DT()[dn.kind][dn.i]; if (it) speak(it.t + '. ' + it.d); break; }
     case 'reciter': { hush(); playAyah('https://everyayah.com/data/Alafasy_128kbps/' + String(el.dataset.u).replace(/[^0-9]/g, '') + '.mp3'); break; }
     case 'dopen': case 'dgo': deenOpen(el.dataset.w); break;
     case 'dnprev': if (dn && dn.i > 0) { dn.i--; dnLearn(); } break;
@@ -1393,5 +1612,5 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 window.addEventListener('online', () => { if (Auth.user) pushState(); });
 if (WEB && 'serviceWorker' in navigator && (location.protocol === 'https:' || /^(localhost|127\.0\.0\.1)$/.test(location.hostname))) window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
 boot();
-window.__noor = { get S() { return S; }, Auth, align, alignBest, normW, wordsOf, MIC, mergeState };
+window.__noor = { memoCards: () => (mm ? mm.cards.map(c => ({ p: c.p, k: c.k })) : null), get S() { return S; }, Auth, align, alignBest, normW, wordsOf, MIC, mergeState };
 })();
