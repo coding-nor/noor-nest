@@ -154,6 +154,13 @@ function sanitizeState(x) {
   for (const d of days) { const e = x.log[d] || {}; o.log[d] = { ayahs: num(e.ayahs, 0, 9999, 0), reviews: num(e.reviews, 0, 9999, 0), stars: num(e.stars, 0, 9999, 0), recites: num(e.recites, 0, 9999, 0) }; }
   o.deen = {};
   for (const k of ['wudu', 'salah', 'times', 'rakat']) { const e = (x.deen || {})[k]; if (e && typeof e === 'object') o.deen[k] = { l: e.l ? 1 : 0, b: num(e.b, 0, 3, 0) }; }
+  const IDRE = /^[a-z0-9]{2,12}$/; const idset = src => { const r = {}; let c = 0; for (const k of Object.keys(src && typeof src === 'object' ? src : {})) { if (IDRE.test(k) && src[k] && ++c <= 80) r[k] = 1; } return r; };
+  o.stick = idset(x.stick); o.own = idset(x.own); o.story = idset(x.story);
+  o.spent = num(x.spent, 0, 100000, 0); o.deedN = num(x.deedN, 0, 100000, 0);
+  const wr = x.wear || {}; o.wear = { hat: IDRE.test(wr.hat) ? wr.hat : '', neck: IDRE.test(wr.neck) ? wr.neck : '', bg: IDRE.test(wr.bg) ? wr.bg : '' };
+  o.chest = DAYRE.test(x.chest) ? x.chest : '';
+  const gm = x.gm || {}; o.gm = { c: num(gm.c, 0, 100000, 0), m: num(gm.m, 0, 100000, 0), cd: DAYRE.test(gm.cd) ? gm.cd : '', md: DAYRE.test(gm.md) ? gm.md : '' };
+  const dd = x.deeds || {}; o.deeds = { d: DAYRE.test(dd.d) ? dd.d : '', k: idset(dd.k) };
   const st = x.streak || {};
   o.streak = { last: DAYRE.test(st.last) ? st.last : '', count: num(st.count, 0, 9999, 0) };
   return o;

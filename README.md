@@ -2,7 +2,7 @@
 
 A phone-first Quran memorization app for children (ages 5 to 12). Quran text and audio come from [UmmahAPI](https://ummahapi.com).
 
-**Built by:** kadem nor el houda
+**Built by:** kadem nor el houda using claude 
 
 ## What it does
 
@@ -97,3 +97,10 @@ Quran data and API: UmmahAPI. Reader artwork: supplied by the app's author (make
 ## Voice (Pray tab)
 
 The Pray tab can read each step aloud with the voice built into the phone or browser (no files, free). It automatically picks the most natural voice installed ("Natural", "Neural", Google, Siri...). Quality depends on the phone: Edge on Windows and recent Android/iPhone voices sound the most human. The Arabic prayer phrases are never read by the robot voice (it mispronounces them); the Al-Fatiha step has a "Hear the reciter" button that plays a real human reciter. The child or parent can switch the voice off with the speaker button.
+
+## Fun and rewards (v7)
+
+- **Stories tab**: 6 prophet stories (Adam, Nuh, Ibrahim, Yusuf, Musa, Yunus) in English, French and Arabic, read aloud by the narrator. Prophets are never drawn; pictures show only places and things. Text lives in `public/fun.js`.
+- **Play tab**: Word catch, Memory match, Sticker book (32 stickers), Dress Noor (hats, necklaces, backgrounds bought with stars; the pet's growth stage never goes down), and a Daily chest.
+- **Grown-ups tab**: "Good deeds today" ticks (+1 star each, once a day).
+- All of it is saved to the parent account (server whitelists the new fields).
